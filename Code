@@ -1,0 +1,64 @@
+class pixel_txn;
+  rand bit [23:0] pixel;
+  rand bit sof, eof;
+  constraint sof_eof_c { sof -> !eof; }
+  function void display();
+    $display("[TXN] pixel=%h sof=%0b eof=%0b", pixel, sof, eof);
+  endfunction
+endclass
+
+class generator;
+  rand int width, height;
+  pixel_txn txn;
+  constraint img_size_c { width inside {[4:32]}; height inside {[4:32]}; }
+  function new();
+    txn = new();
+  endfunction
+  task generate(output pixel_txn tx);
+    assert(this.randomize());
+    tx = new();
+    assert(tx.randomize());
+    tx.display();
+  endtask
+endclass
+class driver;
+  virtual img_if vif;
+  mailbox gen2drv;
+  function new(virtual img_if vif, mailbox gen2drv);
+    this.vif = vif;
+    this.gen2drv = gen2drv;
+  endfunction
+  task run();
+    pixel_txn tx;
+    forever begin
+      gen2drv.get(tx);
+      @(posedge vif.clk);
+      vif.valid_in <= 1'b1;
+      vif.pixel_in <= tx.pixel;
+      vif.sof_in   <= tx.sof;
+      vif.eof_in   <= tx.eof;
+      @(posedge vif.clk);
+      vif.valid_in <= 1'b0;
+      vif.sof_in   <= 1'b0;
+      vif.eof_in   <= 1'b0;
+    end
+  endtask
+endclass
+program test(img_if tb_if);
+  generator gen;
+  driver drv;
+  mailbox gen2drv = new();
+  initial begin
+    gen = new();
+    drv = new(tb_if, gen2drv);
+    fork drv.run(); join_none
+    repeat (5) begin
+      pixel_txn tx;
+      gen.generate(tx);
+      gen2drv.put(tx);
+      #10;
+    end
+    #100 $finish;
+  end
+endprogram
+
