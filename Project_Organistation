@@ -1,0 +1,26 @@
+├── img_pipeline/
+│ ├── img_pipeline.v
+│
+├── tb_top/
+│ ├── tb_top.sv
+│ ├── interface.sv
+│ ├── driver.sv
+│ ├── monitor.sv
+│ ├── coverage.sv
+│ └── env.sv
+│
+├── models/
+│ └── golden_model.sv
+│
+├── sim/
+│ ├── run.do
+│ ├── compile.do
+│ └── wave.do
+│
+├── input_images/
+│ └── image.txt
+│
+└── reports/
+  ├── simulation_log.txt
+  ├── coverage_report.txt
+  └── results_waveforms/
